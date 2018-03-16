@@ -11,20 +11,13 @@ import UIKit
 class TodoListViewController: UITableViewController {
     
     var itemArray = [TodoItem]()
-    let defaults = UserDefaults.standard
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+
 
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-        
-        let newItem = TodoItem()
-        newItem.title = "Find Mike"
-        itemArray.append(newItem)
-
-        
-        if let items = defaults.array(forKey: "TodoListArray") as? [TodoItem] {
-            itemArray = []
-        }
+        loadItems()
         
     }
     
@@ -41,6 +34,8 @@ class TodoListViewController: UITableViewController {
         cell.textLabel?.text = item.title
         
         cell.accessoryType = item.done ? .checkmark : .none
+        
+        saveItems()
         
         return cell
         
@@ -69,7 +64,7 @@ class TodoListViewController: UITableViewController {
             newItem.title = textField.text!
             self.itemArray.append(newItem)
             
-            self.defaults.set(self.itemArray, forKey: "TodoListArray")
+            self.saveItems()
             
             self.tableView.reloadData()
             
@@ -82,6 +77,30 @@ class TodoListViewController: UITableViewController {
     
         alert.addAction(action)
         present(alert, animated: true, completion: nil)
+    }
+    
+    func saveItems(){
+        let encoder = PropertyListEncoder()
+        
+        do {
+            let data = try encoder.encode(itemArray)
+            try data.write(to: dataFilePath!)
+        } catch {
+            print("ERROR", error)
+        }
+        
+    }
+    
+    func loadItems(){
+        if let data = try? Data(contentsOf: dataFilePath!) {
+            let decoder = PropertyListDecoder()
+            do {
+                itemArray = try decoder.decode([TodoItem].self, from: data)
+            } catch {
+                print("ERROR \(error)")
+            }
+        }
+
     }
     
     
